@@ -2,10 +2,10 @@ import salabim as sim
 import numpy as np
 import matplotlib.pyplot as plt
 
-SIM_TIME = 7  # дней
+SIM_TIME = 5  # дней
 
-DEVICES = 10  # количество аппаратов
-DOCTORS = 5  # количество врачей
+DEVICES = 8  # количество аппаратов
+#DOCTORS = 10  # количество врачей
 
 # распределения
 D_INTERPRETATION = sim.Uniform(3, 15)
@@ -14,6 +14,8 @@ D_INTERPRETATION = sim.Uniform(3, 15)
 # интенсивность исследований в час (на 24 часа)
 m_rg = [2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 6, 4, 4, 5, 5, 5, 4, 4, 3, 3, 3, 3, 2]
 
+# количество врачей в час (на 24 часа)
+m_doc = [1, 1, 1, 1, 1, 1, 1, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1]
 
 # функция преобразование формата времени
 def time(t):
@@ -21,13 +23,14 @@ def time(t):
 
 
 # генератор исследований
-class StudyGenerator(sim.Component):
-	def __init__(self, data, *args, **kwargs):
+class Generator(sim.Component):
+	def __init__(self, data, mdoc, *args, **kwargs):
 		self.data = data * SIM_TIME
+		self.mdoc = mdoc * SIM_TIME
 
 		sim.Component.__init__(self, *args, **kwargs)
 
-	def inter_arrival_time(self):
+	def study_iat(self):
 		t = [0.0]
 		n = 0
 		while t[n] <= int(env.days(SIM_TIME)):
@@ -43,9 +46,10 @@ class StudyGenerator(sim.Component):
 		return t
 
 	def process(self):
-		times = self.inter_arrival_time()
+		times = self.study_iat()
 		prev = 0
 		for time in times:
+			doctors.set_capacity(int(self.mdoc[int(time//60)]))
 			Study()
 			yield self.hold(time - prev)
 			prev = time
@@ -55,8 +59,7 @@ class StudyGenerator(sim.Component):
 class Study(sim.Component):
 	def process(self):
 		self.enter(worklist)
-		print('Исследование: ',
-								self.name(), 'поставлено в очередь в ', time(env.now()))
+		print('Исследование: ', self.name(), 'поставлено в очередь в ', time(env.now()))
 		if len(cito_worklist) == 0:
 			yield self.request(doctors, fail_delay=1440)
 			yield self.hold(D_INTERPRETATION)
@@ -99,11 +102,12 @@ worklist = sim.Queue("worklist")
 cito_worklist = sim.Queue("cito_worklist")
 
 # врачи
-doctors = sim.Resource("doctors", capacity=DOCTORS)
+doctors = sim.Resource("doctors", capacity=0)
+
 
 # запуск генератора исследований
 for i in range(DEVICES):
-	gen = StudyGenerator(m_rg)
+	gen = Generator(m_rg, m_doc)
 	gen.process()
 
 # начинаем симуляцию
