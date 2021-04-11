@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 SIM_TIME = 5  # дней
 
-DEVICES = 5  # количество аппаратов
+DEVICES = 4  # количество аппаратов
 #DOCTORS = 10  # количество врачей
 
 # распределения
@@ -14,7 +14,10 @@ D_INTERPRETATION = sim.Uniform(3, 15)
 m_rg = [1, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 6, 4, 4, 5, 5, 5, 4, 4, 3, 3, 3, 3, 2]
 
 # количество врачей в час (на 24 часа)
-m_doc = [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+m_doc = [
+	1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1
+]
+
 
 # функция преобразование формата времени
 def time(t):
@@ -28,8 +31,9 @@ class Generator(sim.Component):
 		self.mdoc = mdoc * SIM_TIME
 
 		sim.Component.__init__(self, *args, **kwargs)
-		
+
 # функция генерирует массив временных меток когда были выполнены исследования
+
 	def study_iat(self):
 		t = [0.0]
 		n = 0
@@ -49,8 +53,9 @@ class Generator(sim.Component):
 		times = self.study_iat()
 		prev = 0
 		for time in times:
-			doctors.set_capacity(int(self.mdoc[int(time//60)])) # устанавливаем кол_во врачей
-			Study() # создаем исследование
+			doctors.set_capacity(
+				int(self.mdoc[int(time // 60)]))  # устанавливаем кол_во врачей
+			Study()  # создаем исследование
 			yield self.hold(time - prev)
 			prev = time
 
@@ -60,17 +65,18 @@ class Study(sim.Component):
 	def process(self):
 		self.enter(worklist)
 		t = env.now()
-		print(time(env.now()), 'Исследование: ', self.name(), 'выполнено')
+		print(time(env.now()), self.name(), 'выполнено')
 		if len(cito_worklist) == 0:
 			yield self.request(doctors, fail_delay=env.hours(24))
 			yield self.hold(D_INTERPRETATION)
-			if self.failed(): # проверка нарушения SLA
+			if self.failed():  # проверка нарушения SLA
 				env.studies_failed += 1
 				print(time(env.now()), self.name(), 'FAILED')
 				#env.print_trace("", "", "FAILED")
 			self.leave(worklist)
 			t = env.now() - t
-			print(time(env.now()), 'Исследование: ', self.name(), 'описано.', 'Время в очереди: ', time(t))
+			print(
+				time(env.now()), self.name(), 'описано.', 'Время в очереди: ', time(t))
 		else:
 			pass
 			#yield self.hold(5)
@@ -106,8 +112,7 @@ worklist = sim.Queue("worklist")
 cito_worklist = sim.Queue("cito_worklist")
 
 # врачи
-doctors = sim.Resource(name = 'doctor.', capacity=0)
-
+doctors = sim.Resource(name='doctor.', capacity=0)
 
 # запуск генератора исследований
 for i in range(DEVICES):
@@ -127,9 +132,9 @@ print('Нарушения SLA обычные', env.studies_failed)
 print('Нарушения SLA CITO', env.cito_studies_failed)
 
 # графики
-plt.plot(*worklist.length.tx(), *cito_worklist.length.tx(), drawstyle='steps-plot')
+plt.plot(
+	*worklist.length.tx(), *cito_worklist.length.tx(), drawstyle='steps-plot')
 plt.show()
-
 '''
 x = []
 
