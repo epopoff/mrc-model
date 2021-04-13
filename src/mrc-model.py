@@ -4,24 +4,31 @@ import matplotlib.pyplot as plt
 
 SIM_TIME = 5  # дней
 
-DEVICES = 4  # количество аппаратов
+DEVICES = 5 # количество аппаратов
 #DOCTORS = 10  # количество врачей
 
 # распределения
-D_INTERPRETATION = sim.Uniform(3, 15)
+D_INTERPRETATION = sim.Uniform(15, 40)
 
 # интенсивность исследований в час (на 24 часа)
-m_rg = [1, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 6, 4, 4, 5, 5, 5, 4, 4, 3, 3, 3, 3, 2]
+m_mrt = [0, 0, 0, 0, 0, 0.5, 0.5, 1, 1, 1.5, 1, 1, 1, 1, 1.5, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0, 0]
+
+#m_mrt = [
+#	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
+#]
 
 # количество врачей в час (на 24 часа)
 m_doc = [
-	1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 2, 2, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1
+	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
 ]
 
 
 # функция преобразование формата времени
 def time(t):
 	return '{0:02.0f}:{1:02.0f}'.format(*divmod(t, 60))
+	
+def zero_div(x, y):
+	return x / y if y else 0
 
 
 # генератор исследований
@@ -37,15 +44,20 @@ class Generator(sim.Component):
 	def study_iat(self):
 		t = [0.0]
 		n = 0
-		while t[n] <= int(env.days(SIM_TIME)):
-			lmbd = self.mstud[int(t[n]) // 60] / 60
-			r = np.random.uniform(0, 1)
-			teta = (-1 / lmbd) * np.log(r)
-			if t[n] + teta < int(env.days(SIM_TIME)):
-				time = t[n] + teta
-				t.append(time)
+		time = 0
+		while time <= int(env.days(SIM_TIME)):
+			if self.mstud[int(time) // 60] != 0:
+				lmbd = self.mstud[int(time) // 60] / 60
+				r = np.random.uniform(0, 1)
+				teta = (-1 / lmbd) * np.log(r)
+				if time + teta < int(env.days(SIM_TIME)):
+					time += teta
+					t.append(time)
+				else:
+					break
 			else:
-				break
+				time += 60
+				pass
 			n += 1
 		return t
 
@@ -116,7 +128,7 @@ doctors = sim.Resource(name='doctor.', capacity=0)
 
 # запуск генератора исследований
 for i in range(DEVICES):
-	gen = Generator(m_rg, m_doc)
+	gen = Generator(m_mrt, m_doc)
 	gen.process()
 
 # начинаем симуляцию
