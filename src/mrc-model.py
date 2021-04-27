@@ -22,23 +22,23 @@ D_INTERPRETATION = sim.Uniform(15, 40)
 #	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
 #]
 
-mr_rate = {
+mr_study_rate = {
 	0: 0, 5: 0, 6: 0.02, 7: 0.2, 8: 0.68, 9: 1, 10: 1.1, 11: 0.93, 12: 0.92, 13: 0.84, 14: 0.82, 15: 1.07, 16: 1.18, 17: 1.09, 18: 1.05, 19: 0.61, 20: 0.25, 21: 0.08, 22: 0.01, 24: 0
 	}
 
 
 # количество врачей в час (на 24 часа)
-m_doc = [
+mr_doc_rate = [
 	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0
 ]
 
 
 # генератор исследований
 class Generator(sim.Component):
-	def __init__(self, rate, mdoc, *args, **kwargs):
+	def __init__(self, study_rate, doc_rate, *args, **kwargs):
 		#self.mstud = mstud * SIM_TIME
-		self.rate = rate
-		self.mdoc = mdoc * SIM_TIME
+		self.study_rate = study_rate
+		self.doc_rate = doc_rate * SIM_TIME
 
 		sim.Component.__init__(self, *args, **kwargs)
 	'''
@@ -65,7 +65,7 @@ class Generator(sim.Component):
 	'''
 
 	def process(self):
-		times = get_arrivals(self.rate)
+		times = get_arrivals(self.study_rate)
 		
 		l = len(times)
 
@@ -75,7 +75,7 @@ class Generator(sim.Component):
 
 		prev = 0
 		for time in times:
-			doctors.set_capacity(int(self.mdoc[int(env.hours(time) // 60)]))  	# устанавливаем кол_во врачей
+			doctors.set_capacity(int(self.doc_rate[int(env.hours(time) // 60)]))  	# устанавливаем кол_во врачей
 			print('Doctors capacity ', doctors.capacity())
 			Study()  								# создаем исследование
 			yield self.hold(env.hours(time) - prev)
@@ -138,7 +138,7 @@ doctors = sim.Resource(name='doctor.', capacity=0)
 
 # запуск генератора исследований
 for i in range(DEVICES):
-	gen = Generator(mr_rate, m_doc)
+	gen = Generator(mr_study_rate, mr_doc_rate)
 	gen.process()
 
 # начинаем симуляцию
@@ -158,6 +158,7 @@ plt.plot(
 	*worklist.length.tx(), *cito_worklist.length.tx(), drawstyle='steps')
 plt.show()
 plt.close()
+
 '''
 x = []
 
@@ -165,7 +166,7 @@ y = 0
 for _ in range(24):
 	x.append(y)
 	y += 1
-plt.plot(x, m_doc, drawstyle='steps')
+plt.plot(x, doc_rate, drawstyle='steps')
 plt.plot(x, m_rg, drawstyle='steps')
 plt.show()
 '''
