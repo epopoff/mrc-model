@@ -8,7 +8,7 @@ from nhpp import get_arrivals
 
 SIM_TIME = 5  			# дней
 
-DEVICES = 5 			# количество аппаратов
+DEVICES = 8 			# количество аппаратов
 #DOCTORS = 10  			# количество врачей
 
 # распределения
@@ -18,8 +18,8 @@ D_INTERPRETATION = sim.Uniform(15, 40)
 #m_mrt = [0, 0, 0, 0, 0, 0.5, 0.5, 1, 1, 1.5, 1, 1, 1, 1, 1.5, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0, 0]
 
 #m_mrt = [
-	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
-]
+#	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
+#]
 
 knots = {
 	0: 0, 5: 0, 6: 0.02, 7: 0.2, 8: 0.68, 9: 1, 10: 1.1, 11: 0.93, 12: 0.92, 13: 0.84, 14: 0.82, 15: 1.07, 16: 1.18, 17: 1.09, 18: 1.05, 19: 0.61, 20: 0.25, 21: 0.08, 22: 0.01, 24: 0
@@ -28,7 +28,7 @@ knots = {
 
 # количество врачей в час (на 24 часа)
 m_doc = [
-	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
+	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0
 ]
 
 
@@ -65,7 +65,7 @@ class Generator(sim.Component):
 
 	def process(self):
 		times = get_arrivals(knots)
-
+		
 		l = len(times)
 
 		for i in range(1, SIM_TIME):
@@ -74,11 +74,11 @@ class Generator(sim.Component):
 
 		prev = 0
 		for time in times:
-			doctors.set_capacity(
-				int(self.mdoc[int(time // 60)]))  	# устанавливаем кол_во врачей
+			doctors.set_capacity(int(self.mdoc[int(env.hours(time) // 60)]))  	# устанавливаем кол_во врачей
+			print('Doctors capacity ', doctors.capacity())
 			Study()  								# создаем исследование
-			yield self.hold(time - prev)
-			prev = time
+			yield self.hold(env.hours(time) - prev)
+			prev = env.hours(time)
 
 
 # обычные исследования
