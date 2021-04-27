@@ -1,6 +1,7 @@
 import salabim as sim
 #import salabim_mrc as sim_mrc
 import numpy as np
+import matplotlib_terminal
 import matplotlib.pyplot as plt
 
 from misc_tools import time_format
@@ -21,7 +22,7 @@ D_INTERPRETATION = sim.Uniform(15, 40)
 #	0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0
 #]
 
-knots = {
+mr_rate = {
 	0: 0, 5: 0, 6: 0.02, 7: 0.2, 8: 0.68, 9: 1, 10: 1.1, 11: 0.93, 12: 0.92, 13: 0.84, 14: 0.82, 15: 1.07, 16: 1.18, 17: 1.09, 18: 1.05, 19: 0.61, 20: 0.25, 21: 0.08, 22: 0.01, 24: 0
 	}
 
@@ -34,9 +35,9 @@ m_doc = [
 
 # генератор исследований
 class Generator(sim.Component):
-	def __init__(self, knots, mdoc, *args, **kwargs):
+	def __init__(self, rate, mdoc, *args, **kwargs):
 		#self.mstud = mstud * SIM_TIME
-		self.knots = knots
+		self.rate = rate
 		self.mdoc = mdoc * SIM_TIME
 
 		sim.Component.__init__(self, *args, **kwargs)
@@ -64,7 +65,7 @@ class Generator(sim.Component):
 	'''
 
 	def process(self):
-		times = get_arrivals(knots)
+		times = get_arrivals(self.rate)
 		
 		l = len(times)
 
@@ -137,7 +138,7 @@ doctors = sim.Resource(name='doctor.', capacity=0)
 
 # запуск генератора исследований
 for i in range(DEVICES):
-	gen = Generator(knots, m_doc)
+	gen = Generator(mr_rate, m_doc)
 	gen.process()
 
 # начинаем симуляцию
@@ -156,6 +157,7 @@ print('Нарушения SLA CITO', env.cito_studies_failed)
 plt.plot(
 	*worklist.length.tx(), *cito_worklist.length.tx(), drawstyle='steps')
 plt.show()
+plt.close()
 '''
 x = []
 
